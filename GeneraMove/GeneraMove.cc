@@ -84,18 +84,19 @@ OStatus GeneraMove::DoStart(const OSystemEvent& event){
 
 	Motion::MotionCommand command;
 	memset(&command, 0, sizeof(command));
+
 	command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
 	command.head_cmd=Motion::HEAD_LOOKAT;
 	command.tail_cmd=Motion::TAIL_NO_CMD;
 	command.head_lookat=vector3d(150,0,50);
-
+	command.vx=0;
+	command.vy=0;
+	command.va=0;
 	if (sph ==1){
 	  subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
 	  subject[sbjMotionControl]->NotifyObservers();
-
 	  sph=0;
 	}
-
 	//Walk();
 
 	return oSUCCESS;
@@ -180,7 +181,7 @@ void GeneraMove::Walk()
 /** Funzione invocata al ricevimento di un Assert Ready da parte di
     Motion.*/
 void GeneraMove::Ready(const OReadyEvent& event){
-	OSYSDEBUG(("GeneraMove:: ricevuto Assert Ready\n"));
+  //OSYSDEBUG(("GeneraMove:: ricevuto Assert Ready\n"));
 	sph=1;
 }
 
@@ -238,7 +239,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 		}
 	}
 
-	//OSYSDEBUG(("pix count davanti: %d\n", pix_count[3][1]));
+	OSYSDEBUG(("pix count davanti: %d\n", pix_count[3][1]));
 	//minefield
 	//int max_x = sizeof(grid_matrix[0]) / sizeof(int);
 	//int max_y = sizeof(grid_matrix) /sizeof(int);
@@ -271,64 +272,174 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 
 	OSYSDEBUG(("grid matrix davanti: %d\n", grid_matrix[3][1]));
 
-	 Motion::MotionCommand command;
-		    memset(&command, 0, sizeof(command));
+
+	Motion::MotionCommand command;
+	memset(&command, 0, sizeof(command));
 
 
-		    if (grid_matrix[3][1] < 3 && grid_matrix[2][1] < 3)
-		      {
-			OSYSDEBUG(("entrato IF: %d\n", grid_matrix[3][1]));
 
-			command.motion_cmd=Motion::MOTION_WALK_TROT;
-			command.head_cmd=Motion::HEAD_LOOKAT;
-			command.tail_cmd=Motion::TAIL_NO_CMD;
-			command.head_lookat=vector3d(150,0,50);
-			command.vx=100;
-			command.vy=0;
-			command.va=0.005;
-			if (sph ==1){
-			  subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-			  subject[sbjMotionControl]->NotifyObservers();
-			  sph=0;
-			}
-			Wait(static_cast<longword>(2000000000));
-		      }
-		    else if (grid_matrix[3][1] < 3 && grid_matrix[3][0] < 3)
-		      {
-			OSYSDEBUG(("entrato IF: %d\n", grid_matrix[3][1]));
+	// if (grid_matrix[3][1] < 3 && grid_matrix[2][1] < 3 && grid_matrix[1][1] < 3){
+	//   OSYSDEBUG(("vado dritto di 3 sx\n"));
+	  // command.motion_cmd=Motion::MOTION_WALK_TROT;
+	  // command.head_cmd=Motion::HEAD_LOOKAT;
+	  // command.tail_cmd=Motion::TAIL_NO_CMD;
+	  // command.head_lookat=vector3d(150,0,50);
+	  // command.vx=100;
+	  // command.vy=0;
+	  // command.va=0.05;
+	  // if (sph ==1){
+	  //   subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	  //   subject[sbjMotionControl]->NotifyObservers();
+	  //   sph=0;
+	  // }
+	//   Wait(static_cast<longword>(2000000000));
+	// }
+	// else if (grid_matrix[3][2] < 3 && grid_matrix[2][2] < 3 && grid_matrix[1][2] < 3)
+	//   {
+	//     OSYSDEBUG(("vado dritto di 3 dx\n"));
+	    // command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    // command.head_cmd=Motion::HEAD_LOOKAT;
+	    // command.tail_cmd=Motion::TAIL_NO_CMD;
+	    // command.head_lookat=vector3d(150,0,50);
+	    // command.vx=100;
+	    // command.vy=0;
+	    // command.va=0.05;
+	    // if (sph ==1){
+	    //   subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	    //   subject[sbjMotionControl]->NotifyObservers();
+	    //   sph=0;
+	    // }
+	   //  Wait(static_cast<longword>(2000000000));
+	//   }
+	// else if (grid_matrix[3][1] < 3 && grid_matrix[2][1] < 3 && grid_matrix[1][0] < 3)
+	//   {
+	//     OSYSDEBUG(("giro a sinistra di 3\n"));
+	//     Wait(static_cast<longword>(2000000000));
+	//   } 
+	// else if (grid_matrix[3][2] < 3 && grid_matrix[2][2] < 3 && grid_matrix[1][3] < 3 )
+	//   {
+	//     OSYSDEBUG(("giro a destra di 3\n"));
+	//     Wait(static_cast<longword>(2000000000));
+	//   }
+	// if ((grid_matrix[3][1] < 3 && grid_matrix[2][1] < 3) || (grid_matrix[3][2] < 3 && grid_matrix[2][2] < 3))
+	//   {
+	//     OSYSDEBUG(("vado dritto di 2\n"));
+	//     Wait(static_cast<longword>(2000000000));
+	//   }
+	// else if (grid_matrix[3][1] < 3 && grid_matrix[3][0] < 3)
+	//   {
+	//     OSYSDEBUG(("giro a sinistra di 2\n"));
+	    // command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    // command.head_cmd=Motion::HEAD_LOOKAT;
+	    // command.tail_cmd=Motion::TAIL_NO_CMD;
+	    // command.head_lookat=vector3d(150,0,50);
+	    // command.vx=100;
+	    // command.vy=30;
+	    // command.va=0.05;
+	    // if (sph ==1){
+	    //   subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	    //   subject[sbjMotionControl]->NotifyObservers();
+	    //   sph=0;
+	    // }
+	  //   Wait(static_cast<longword>(1000000000));
 
-			command.motion_cmd=Motion::MOTION_WALK_TROT;
-			command.head_cmd=Motion::HEAD_LOOKAT;
-			command.tail_cmd=Motion::TAIL_NO_CMD;
-			command.head_lookat=vector3d(150,0,50);
-			command.vx=100;
-			command.vy=0;
-			command.va=0.835;
-			if (sph ==1){
-			  subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-			  subject[sbjMotionControl]->NotifyObservers();
-			  sph=0;
-			}
-			Wait(static_cast<longword>(1000000000));
-		      }
-		    else
-		      {
-			OSYSDEBUG(("entrato ELSE\n"));
-			command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
-			command.head_cmd=Motion::HEAD_LOOKAT;
-			command.tail_cmd=Motion::TAIL_NO_CMD;
-			command.head_lookat=vector3d(150,0,50);
-			command.vx=0;
-			command.vy=0;
-			command.va=0;
-			if (sph ==1){
-			  subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-			  subject[sbjMotionControl]->NotifyObservers();
-			  sph=0;
-			}
+	//   }
+	// else if (grid_matrix[3][2] < 3 && grid_matrix[3][3] < 3)
+	//   {
+	//     OSYSDEBUG(("giro a destra di 2\n"));
+	    // command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    // command.head_cmd=Motion::HEAD_LOOKAT;
+	    // command.tail_cmd=Motion::TAIL_NO_CMD;
+	    // command.head_lookat=vector3d(150,0,50);
+	    // command.vx=100;
+	    // command.vy=0;
+	    // command.va=-0.35;
+	    // if (sph ==1){
+	    //   subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	    //   subject[sbjMotionControl]->NotifyObservers();
+	    //   sph=0;
+	    // }
+	  //   Wait(static_cast<longword>(500000000));
+	  // }
+	// else if (grid_matrix[3][1] < 3)
+	//   {
+	//     OSYSDEBUG(("vado dritto di 1\n"));
+	//     Wait(static_cast<longword>(1000000000));
+	//   }
+	// else if (grid_matrix[3][2] < 3)
+	//   {
+	//     OSYSDEBUG(("vado dritto di 1\n"));
+	//     Wait(static_cast<longword>(1000000000));
+	//   }
+	// else if (grid_matrix[3][1] < 3) 
+	//   {
+	//     OSYSDEBUG(("giro a sinistra di 1\n"));
+	//     Wait(static_cast<longword>(1000000000));
+	//   }
+	// else if (grid_matrix[3][2] < 3)
+	//   {
+	//     OSYSDEBUG(("giro a destra di 1\n"));
+	//     // command.motion_cmd=Motion::MOTION_WALK_TROT;
+	//     // command.head_cmd=Motion::HEAD_LOOKAT;
+	//     // command.tail_cmd=Motion::TAIL_NO_CMD;
+	//     // command.head_lookat=vector3d(150,0,50);
+	//     // command.vx=0;
+	//     // command.vy=0;
+	//     // command.va=0.85;
+	//     // if (sph ==1){
+	//     //   subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	//     //   subject[sbjMotionControl]->NotifyObservers();
+	//     //   sph=0;
+	//     // }
+	//     Wait(static_cast<longword>(1500000000));
+	//   }
+	// else{
+	//     command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+	//     command.head_cmd=Motion::HEAD_LOOKAT;
+	//     command.tail_cmd=Motion::TAIL_NO_CMD;
+	//     command.head_lookat=vector3d(150,0,50);
+	//     command.vx=0;
+	//     command.vy=0;
+	//     command.va=0.85;
+	//     if (sph ==1){
+	//       subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	//       subject[sbjMotionControl]->NotifyObservers();
+	//       sph=0;
+	//     }
+	// }
 
+	if(grid_matrix[3][1] < 3 || grid_matrix[3][2] < 3){
+	    OSYSDEBUG(("dritto\n"));
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(150,0,50);
+	    command.vx=100;
+	    command.vy=0;
+	    command.va=0.05;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(1000000000));
 	}
-
+	else{
+	    OSYSDEBUG(("sinistra\n"));
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(150,0,50);
+	    command.vx=0;
+	    command.vy=0;
+	    command.va=0.35;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(1000000000));
+	}
 
 
 	observer[event.ObsIndex()]->AssertReady();
@@ -422,38 +533,38 @@ GeneraMove::SetCdtVectorData()
 	//
 	// cdtGray->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-	cdtGray->Set( 0, 114, 83, 173, 150);
-	cdtGray->Set( 1, 114, 83, 173, 150);
-	cdtGray->Set( 2, 114, 83, 173, 150);
-	cdtGray->Set( 3, 114, 83, 173, 150);
-	cdtGray->Set( 4, 114, 83, 173, 150);
-	cdtGray->Set( 5, 114, 83, 173, 150);
-	cdtGray->Set( 6, 114, 83, 173, 150);
-	cdtGray->Set( 7, 114, 83, 173, 150);
-	cdtGray->Set( 8, 114, 83, 173, 150);
-	cdtGray->Set( 9, 114, 83, 173, 150);
-	cdtGray->Set(10, 114, 83, 173, 150);
-	cdtGray->Set(11, 114, 83, 173, 150);
-	cdtGray->Set(12, 114, 83, 173, 150);
-	cdtGray->Set(13, 114, 83, 173, 150);
-	cdtGray->Set(14, 114, 83, 173, 150);
-	cdtGray->Set(15, 114, 83, 173, 150);
-	cdtGray->Set(16, 114, 83, 173, 150);
-	cdtGray->Set(17, 114, 83, 173, 150);
-	cdtGray->Set(18, 114, 83, 173, 150);
-	cdtGray->Set(19, 114, 83, 173, 150);
-	cdtGray->Set(20, 114, 83, 173, 150);
-	cdtGray->Set(21, 114, 83, 173, 150);
-	cdtGray->Set(22, 114, 83, 173, 150);
-	cdtGray->Set(23, 114, 83, 173, 150);
-	cdtGray->Set(24, 114, 83, 173, 150);
-	cdtGray->Set(25, 114, 83, 173, 150);
-	cdtGray->Set(26, 114, 83, 173, 150);
-	cdtGray->Set(27, 114, 83, 173, 150);
-	cdtGray->Set(28, 114, 83, 173, 150);
-	cdtGray->Set(29, 114, 83, 173, 150);
-	cdtGray->Set(30, 114, 83, 173, 150);
-	cdtGray->Set(31, 114, 83, 173, 150);
+	cdtGray->Set( 0, 118, 106, 133, 112);
+	cdtGray->Set( 1, 118, 106, 133, 112);
+	cdtGray->Set( 2, 118, 106, 133, 112);
+	cdtGray->Set( 3, 118, 106, 133, 112);
+	cdtGray->Set( 4, 118, 106, 133, 112);
+	cdtGray->Set( 5, 118, 106, 133, 112);
+	cdtGray->Set( 6, 118, 106, 133, 112);
+	cdtGray->Set( 7, 118, 106, 133, 112);
+	cdtGray->Set( 8, 118, 106, 133, 112);
+	cdtGray->Set( 9, 118, 106, 133, 112);
+	cdtGray->Set(10, 118, 106, 133, 112);
+	cdtGray->Set(11, 118, 106, 133, 112);
+	cdtGray->Set(12, 118, 106, 133, 112);
+	cdtGray->Set(13, 118, 106, 133, 112);
+	cdtGray->Set(14, 118, 106, 133, 112);
+	cdtGray->Set(15, 118, 106, 133, 112);
+	cdtGray->Set(16, 118, 106, 133, 112);
+	cdtGray->Set(17, 118, 106, 133, 112);
+	cdtGray->Set(18, 118, 106, 133, 112);
+	cdtGray->Set(19, 118, 106, 133, 112);
+	cdtGray->Set(20, 118, 106, 133, 112);
+	cdtGray->Set(21, 118, 106, 133, 112);
+	cdtGray->Set(22, 118, 106, 133, 112);
+	cdtGray->Set(23, 118, 106, 133, 112);
+	cdtGray->Set(24, 118, 106, 133, 112);
+	cdtGray->Set(25, 118, 106, 133, 112);
+	cdtGray->Set(26, 118, 106, 133, 112);
+	cdtGray->Set(27, 118, 106, 133, 112);
+	cdtGray->Set(28, 118, 106, 133, 112);
+	cdtGray->Set(29, 118, 106, 133, 112);
+	cdtGray->Set(30, 118, 106, 133, 112);
+	cdtGray->Set(31, 118, 106, 133, 112);
 
 
 
