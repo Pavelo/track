@@ -15,7 +15,7 @@ typedef unsigned char BYTE;
 
 int grids_x = 4;
 int grids_y = 4;
-
+int last_seen = 0;
   /** Stati di Touched.*/
   enum
     {
@@ -189,21 +189,26 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 
         imageVec = (OFbkImageVectorData*)event.Data(0);
         OFbkImageInfo* info = imageVec->GetInfo(ofbkimageLAYER_C);
+        OFbkImageInfo* infoM = imageVec->GetInfo(ofbkimageLAYER_M);
 	byte*          data = imageVec->GetData(ofbkimageLAYER_C);
+	byte*          dataM = imageVec->GetData(ofbkimageLAYER_M);
 
 	OFbkImage cdtImage(info, data, ofbkimageBAND_CDT);
+	OFbkImage yImage(infoM, dataM, ofbkimageBAND_Y);
 
 	int width = cdtImage.Width();
 	int height = cdtImage.Height();    
 	int m = 0;
 	int n = 0;
 	//int pix_count[grids_x][grids_y];
+	int **y_count = (int**) calloc(grids_x, sizeof(int*));
 	 int **pix_count = (int**) calloc(grids_x, sizeof(int*));
 	 int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
 	for (int i=0; i<grids_x; i++)
 	{
 		grid_matrix[i] = (int*) calloc(grids_y, sizeof(int));
 		pix_count[i] = (int*) calloc(grids_y, sizeof(int));
+		y_count[i] = (int*) calloc(grids_y, sizeof(int));
 	}
 	int thrs = 150;
 
@@ -219,6 +224,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 				n = (int) floor( (float) (y * grids_y) / (float) height );
 				pix_count[m][n]++;
 			}
+			y_count[m][n] += (int) floor((float)yImage.Pixel(x,y)/(float)8);
 		}
 	}
 
@@ -232,10 +238,18 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	{
 		for (y=0; y < grids_y; y++)
 		{
+		  if(x == 3 && (y == 1 || y == 2)){
+		  	if (pix_count[x][y] > 410)
+				grid_matrix[x][y] = 0;
+			else
+				grid_matrix[x][y] = 100;
+		  }
+		  else{
 			if (pix_count[x][y] > thrs)
 				grid_matrix[x][y] = 0;
 			else
 				grid_matrix[x][y] = 100;
+		  }
 		}
 	}
 
@@ -424,7 +438,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	    }
 	    Wait(static_cast<longword>(1000000000));
 	}
-	else{
+	else if ((y_count[3][1] < 50 && y_count[3][1] != 0 && y_count[3][2] != 0)|| (y_count[3][2] < 10000 && y_count[3][2] != 0 && y_count[3][1] != 0 )){
 	    OSYSDEBUG(("sinistra\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -438,10 +452,26 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	      subject[sbjMotionControl]->NotifyObservers();
 	      sph=0;
 	    }
-	    Wait(static_cast<longword>(1000000000));
+	    Wait(static_cast<longword>(2000000000));
 	}
+	else {
+	    OSYSDEBUG(("destra\n"));
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(150,0,50);
+	    command.vx=0;
+	    command.vy=0;
+	    command.va=-0.25;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(2000000000));
+	}	
 
-
+OSYSDEBUG(("lum davanti: %d\n", y_count[3][1]));
 	observer[event.ObsIndex()]->AssertReady();
 }
 
@@ -483,7 +513,7 @@ GeneraMove::SetCdtVectorData()
 	}
 
 	// numero di canali da usare
-	cdtVec->SetNumData(2);
+	cdtVec->SetNumData(3);
 
 	// setting della CDT per la palla
 	cdtPink = cdtVec->GetInfo(0);
@@ -533,80 +563,93 @@ GeneraMove::SetCdtVectorData()
 	//
 	// cdtGray->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-	cdtGray->Set( 0, 118, 106, 133, 112);
-	cdtGray->Set( 1, 118, 106, 133, 112);
-	cdtGray->Set( 2, 118, 106, 133, 112);
-	cdtGray->Set( 3, 118, 106, 133, 112);
-	cdtGray->Set( 4, 118, 106, 133, 112);
-	cdtGray->Set( 5, 118, 106, 133, 112);
-	cdtGray->Set( 6, 118, 106, 133, 112);
-	cdtGray->Set( 7, 118, 106, 133, 112);
-	cdtGray->Set( 8, 118, 106, 133, 112);
-	cdtGray->Set( 9, 118, 106, 133, 112);
-	cdtGray->Set(10, 118, 106, 133, 112);
-	cdtGray->Set(11, 118, 106, 133, 112);
-	cdtGray->Set(12, 118, 106, 133, 112);
-	cdtGray->Set(13, 118, 106, 133, 112);
-	cdtGray->Set(14, 118, 106, 133, 112);
-	cdtGray->Set(15, 118, 106, 133, 112);
-	cdtGray->Set(16, 118, 106, 133, 112);
-	cdtGray->Set(17, 118, 106, 133, 112);
-	cdtGray->Set(18, 118, 106, 133, 112);
-	cdtGray->Set(19, 118, 106, 133, 112);
-	cdtGray->Set(20, 118, 106, 133, 112);
-	cdtGray->Set(21, 118, 106, 133, 112);
-	cdtGray->Set(22, 118, 106, 133, 112);
-	cdtGray->Set(23, 118, 106, 133, 112);
-	cdtGray->Set(24, 118, 106, 133, 112);
-	cdtGray->Set(25, 118, 106, 133, 112);
-	cdtGray->Set(26, 118, 106, 133, 112);
-	cdtGray->Set(27, 118, 106, 133, 112);
-	cdtGray->Set(28, 118, 106, 133, 112);
-	cdtGray->Set(29, 118, 106, 133, 112);
-	cdtGray->Set(30, 118, 106, 133, 112);
-	cdtGray->Set(31, 118, 106, 133, 112);
-
+		cdtGray->Set( 0, 118, 108, 133, 113);
+		cdtGray->Set( 1, 118, 108, 133, 113);
+		cdtGray->Set( 2, 118, 108, 133, 113);
+		cdtGray->Set( 3, 118, 108, 133, 113);
+		cdtGray->Set( 4, 118, 108, 133, 113);
+		cdtGray->Set( 5, 118, 108, 133, 113);
+		cdtGray->Set( 6, 118, 108, 133, 113);
+		cdtGray->Set( 7, 118, 108, 133, 113);
+		cdtGray->Set( 8, 118, 108, 133, 113);
+		cdtGray->Set( 9, 118, 108, 133, 113);
+		cdtGray->Set(10, 118, 108, 133, 113);
+		cdtGray->Set(11, 118, 108, 133, 113);
+		cdtGray->Set(12, 118, 108, 133, 113);
+		cdtGray->Set(13, 118, 108, 133, 113);
+		cdtGray->Set(14, 118, 108, 133, 113);
+		cdtGray->Set(15, 118, 108, 133, 113);
+		cdtGray->Set(16, 118, 108, 133, 113);
+		cdtGray->Set(17, 118, 108, 133, 113);
+		cdtGray->Set(18, 118, 108, 133, 113);
+		cdtGray->Set(19, 118, 108, 133, 113);
+		cdtGray->Set(20, 118, 108, 133, 113);
+		cdtGray->Set(21, 118, 108, 133, 113);
+		cdtGray->Set(22, 118, 108, 133, 113);
+		cdtGray->Set(23, 118, 108, 133, 113);
+		cdtGray->Set(24, 118, 108, 133, 113);
+		cdtGray->Set(25, 118, 108, 133, 113);
+		cdtGray->Set(26, 118, 108, 133, 113);
+		cdtGray->Set(27, 118, 108, 133, 113);
+		cdtGray->Set(28, 118, 108, 133, 113);
+		cdtGray->Set(29, 118, 108, 133, 113);
+		cdtGray->Set(30, 118, 108, 133, 113);
+		cdtGray->Set(31, 118, 108, 133, 113);
 
 
 	// setting della CDT per il bordo bianco del tracciato
-/*	cdtWhite = cdtVec->GetInfo(3);
-	cdtWhite->Init(fbkID, ocdtCHANNEL3);
+	cdtWhite = cdtVec->GetInfo(2);
+	cdtWhite->Init(fbkID, ocdtCHANNEL2);
 
 	//
 	// cdtWhite->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-	cdtWhite->Set( 0, 101, 96, 155, 150);
-	cdtWhite->Set( 1, 101, 96, 155, 150);
-	cdtWhite->Set( 2, 101, 96, 155, 150);
-	cdtWhite->Set( 3, 101, 96, 155, 150);
-	cdtWhite->Set( 4, 101, 96, 155, 150);
-	cdtWhite->Set( 5, 101, 96, 155, 150);
-	cdtWhite->Set( 6, 101, 96, 155, 150);
-	cdtWhite->Set( 7, 101, 96, 155, 150);
-	cdtWhite->Set( 8, 101, 96, 155, 150);
-	cdtWhite->Set( 9, 101, 96, 155, 150);
-	cdtWhite->Set(10, 101, 96, 155, 150);
-	cdtWhite->Set(11, 101, 96, 155, 150);
-	cdtWhite->Set(12, 101, 96, 155, 150);
-	cdtWhite->Set(13, 101, 96, 155, 150);
-	cdtWhite->Set(20, 101, 96, 155, 150);
-	cdtWhite->Set(21, 101, 96, 155, 150);
-	cdtWhite->Set(22, 101, 96, 155, 150);
-	cdtWhite->Set(23, 101, 96, 155, 150);
-	cdtWhite->Set(24, 101, 96, 155, 150);
-	cdtWhite->Set(25, 101, 96, 155, 150);
-	cdtWhite->Set(26, 101, 96, 155, 150);
-	cdtWhite->Set(27, 101, 96, 155, 150);
-	cdtWhite->Set(28, 101, 96, 155, 150);
-	cdtWhite->Set(29, 101, 96, 155, 150);
-	cdtWhite->Set(30, 101, 96, 155, 150);
-	cdtWhite->Set(31, 101, 96, 155, 150);
-	cdtWhite->Set( 15, 102, 96, 153, 147);
-	cdtWhite->Set( 17, 101, 96, 155, 154);
-	cdtWhite->Set( 16, 101, 95, 155, 150);
-	cdtWhite->Set( 19, 97, 95, 155, 153);
-	cdtWhite->Set( 18, 99, 96, 155, 153);
-	cdtWhite->Set( 14, 105, 101, 152, 144);*/
+	/*cdtWhite->Set( 0, 112, 111, 118, 117);
+	cdtWhite->Set( 1, 112, 111, 118, 117);
+	cdtWhite->Set( 2, 112, 111, 118, 117);
+	cdtWhite->Set( 3, 112, 111, 118, 117);
+	cdtWhite->Set( 4, 112, 111, 118, 117);
+	cdtWhite->Set( 5, 112, 111, 118, 117);
+	cdtWhite->Set( 6, 112, 111, 118, 117);
+	cdtWhite->Set( 7, 112, 111, 118, 117);
+	cdtWhite->Set( 8, 112, 111, 118, 117);
+	cdtWhite->Set( 9, 112, 111, 118, 117);
+	cdtWhite->Set(10, 112, 111, 118, 117);
+	cdtWhite->Set(11, 112, 111, 118, 117);
+	cdtWhite->Set(12, 112, 111, 118, 117);
+	cdtWhite->Set(13, 112, 111, 118, 117);
+	cdtWhite->Set(20, 112, 111, 118, 117);
+	cdtWhite->Set(21, 112, 111, 118, 117);
+	cdtWhite->Set(22, 112, 111, 118, 117);
+	cdtWhite->Set(23, 112, 111, 118, 117);
+	cdtWhite->Set(24, 112, 111, 118, 117);
+	cdtWhite->Set(25, 112, 111, 118, 117);
+	cdtWhite->Set(26, 112, 111, 118, 117);
+	cdtWhite->Set(27, 112, 111, 118, 117);
+	cdtWhite->Set(28, 112, 111, 118, 117);
+	cdtWhite->Set(29, 112, 111, 118, 117);
+	cdtWhite->Set(30, 112, 111, 118, 117);
+	cdtWhite->Set(31, 112, 111, 118, 117);
+	cdtWhite->Set( 15, 112, 111, 118, 117);
+	cdtWhite->Set( 17, 112, 111, 118, 117);
+	cdtWhite->Set( 16, 112, 111, 118, 117);
+	cdtWhite->Set( 19, 112, 111, 118, 117);
+	cdtWhite->Set( 18, 112, 111, 118, 117);
+	cdtWhite->Set( 14, 112, 111, 118, 117);*/
+
+
+
+cdtWhite->Set( 1, 112, 111, 127, 122);
+cdtWhite->Set( 2, 113, 111, 127, 122);
+	cdtWhite->Set( 3, 113, 111, 127, 122);
+	cdtWhite->Set( 4, 113, 111, 127, 122);
+	cdtWhite->Set( 5, 113, 111, 127, 122);
+	cdtWhite->Set( 6, 113, 111, 127, 122);
+	cdtWhite->Set( 7, 113, 111, 127, 122);
+	cdtWhite->Set( 8, 113, 111, 127, 122);
+	cdtWhite->Set( 9, 113, 111, 127, 122);
+	cdtWhite->Set(10, 113, 111, 127, 122);
+	cdtWhite->Set(11, 113, 111, 127, 122);
 
 
 	result = OPENR::SetCdtVectorData(cdtVecID);
