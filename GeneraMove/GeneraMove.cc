@@ -422,7 +422,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	//     }
 	// }
 
-	if(grid_matrix[3][1] < 3 || grid_matrix[3][2] < 3){
+	if(grid_matrix[3][1] < 3 || grid_matrix[3][2] < 3 || grid_matrix[3][0] < 3 || grid_matrix[3][3] < 3){
 	    OSYSDEBUG(("dritto\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -438,7 +438,25 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	    }
 	    Wait(static_cast<longword>(1000000000));
 	}
-	else if ((y_count[3][1] < 50 && y_count[3][1] != 0 && y_count[3][2] != 0)|| (y_count[3][2] < 10000 && y_count[3][2] != 0 && y_count[3][1] != 0 )){
+	else if ((y_count[3][0] < 1000 )|| (y_count[2][0] < 1000 )){
+    OSYSDEBUG(("sinistra\n"));
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(150,0,50);
+	    command.vx=0;
+	    command.vy=0;
+	    command.va=0.35;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(2000000000));
+	}
+	
+	
+	else if ((y_count[2][1] < 1000 )|| (y_count[2][2] < 1000 )){
 	    OSYSDEBUG(("sinistra\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -639,8 +657,8 @@ GeneraMove::SetCdtVectorData()
 
 
 
-cdtWhite->Set( 1, 112, 111, 127, 122);
-cdtWhite->Set( 2, 113, 111, 127, 122);
+	cdtWhite->Set( 1, 112, 111, 127, 122);
+	cdtWhite->Set( 2, 113, 111, 127, 122);
 	cdtWhite->Set( 3, 113, 111, 127, 122);
 	cdtWhite->Set( 4, 113, 111, 127, 122);
 	cdtWhite->Set( 5, 113, 111, 127, 122);
