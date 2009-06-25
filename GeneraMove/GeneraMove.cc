@@ -15,7 +15,8 @@ typedef unsigned char BYTE;
 
 int grids_x = 4;
 int grids_y = 4;
-int last_seen = 0;
+int last_turn_left = 0;
+int walks = 0;
   /** Stati di Touched.*/
   enum
     {
@@ -386,14 +387,15 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	}	*/
 
 if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 || grid_matrix[0][3] == 0){
+	    last_turn_left = 1;
 	    OSYSDEBUG(("sinistra 2\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
+	    command.head_lookat=vector3d(200,0,50);
 	    command.vx=0;
 	    command.vy=0;
-	    command.va=0.95;
+	    command.va=0.65;
 	    if (sph ==1){
 	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
 	      subject[sbjMotionControl]->NotifyObservers();
@@ -401,15 +403,15 @@ if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 ||
 	    }
 	    Wait(static_cast<longword>(1000000000));
 }
-else if(red_count > 2000){
+else if(red_count > 4000 && last_turn_left == 0){
 	    OSYSDEBUG(("destra\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
+	    command.head_lookat=vector3d(200,0,50);
 	    command.vx=0;
 	    command.vy=0;
-	    command.va=-0.85;
+	    command.va=-0.55;
 	    if (sph ==1){
 	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
 	      subject[sbjMotionControl]->NotifyObservers();
@@ -418,11 +420,16 @@ else if(red_count > 2000){
 	    Wait(static_cast<longword>(1500000000));
 }
 else{
+		if (walks >= 6){
+			last_turn_left = 0;
+			walks = 0;
+		}
+		walks += 1;
 	    OSYSDEBUG(("dritto\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
+	    command.head_lookat=vector3d(200,0,50);
 	    command.vx=100;
 	    command.vy=0;
 	    command.va=0.05;
@@ -543,21 +550,31 @@ cdtBlack->Set( 11, 121, 110, 128, 117);
 	//
 	// cdtWhite->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-/*cdtWhite->Set( 14, 115, 108, 134, 123);
-cdtWhite->Set( 15, 117, 108, 128, 117);
-cdtWhite->Set( 16, 116, 106, 128, 115);
-cdtWhite->Set( 17, 114, 108, 128, 114);
-cdtWhite->Set( 18, 114, 105, 124, 114);
-cdtWhite->Set( 19, 114, 105, 121, 113);
-cdtWhite->Set( 20, 111, 105, 119, 112);*/
-cdtWhite->Set( 13, 112, 103, 141, 123);
+/*cdtWhite->Set( 13, 112, 103, 141, 123);
 cdtWhite->Set( 14, 115, 105, 139, 123);
 cdtWhite->Set( 15, 118, 106, 136, 117);
 cdtWhite->Set( 16, 116, 106, 133, 115);
 cdtWhite->Set( 17, 114, 108, 128, 114);
 cdtWhite->Set( 18, 114, 105, 124, 114);
 cdtWhite->Set( 19, 114, 105, 121, 113);
-cdtWhite->Set( 20, 111, 105, 119, 112);
+cdtWhite->Set( 20, 111, 105, 119, 112);*/
+
+cdtWhite->Set( 6, 104, 101, 160, 155);
+cdtWhite->Set( 7, 108, 95, 164, 148);
+cdtWhite->Set( 8, 108, 93, 164, 144);
+cdtWhite->Set( 9, 109, 91, 161, 135);
+cdtWhite->Set( 10, 109, 92, 157, 133);
+cdtWhite->Set( 11, 112, 94, 152, 130);
+cdtWhite->Set( 12, 115, 95, 148, 126);
+cdtWhite->Set( 13, 115, 98, 146, 123);
+cdtWhite->Set( 14, 117, 99, 143, 122);
+cdtWhite->Set( 15, 118, 99, 136, 117);
+cdtWhite->Set( 16, 116, 102, 133, 115);
+cdtWhite->Set( 17, 114, 105, 128, 114);
+cdtWhite->Set( 18, 114, 105, 124, 114);
+cdtWhite->Set( 19, 114, 105, 121, 113);
+cdtWhite->Set( 20, 111, 104, 119, 112);
+
 
 
 	result = OPENR::SetCdtVectorData(cdtVecID);
