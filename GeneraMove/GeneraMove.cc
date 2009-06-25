@@ -195,6 +195,8 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 
 	OFbkImage cdtImage(info, data, ofbkimageBAND_CDT);
 	OFbkImage yImage(infoM, dataM, ofbkimageBAND_Y);
+	OFbkImage CbImage(infoM, dataM, ofbkimageBAND_Cb);
+	OFbkImage CrImage(infoM, dataM, ofbkimageBAND_Cr);
 
 	int width = cdtImage.Width();
 	int height = cdtImage.Height();    
@@ -292,6 +294,8 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	OSYSDEBUG(("lum:\n %d  %d  %d  %d\n %d  %d  %d  %d \n", 
 	y_count[2][0],y_count[2][1],y_count[2][2],y_count[2][3],
 	y_count[3][0],y_count[3][1],y_count[3][2],y_count[3][3]));
+	
+	OSYSDEBUG(("YCbCr pixel centrale (52,40): %d %d %d\n", yImage.Pixel(52,40), CbImage.Pixel(52,40), CrImage.Pixel(52,40)));
 
 	Motion::MotionCommand command;
 	memset(&command, 0, sizeof(command));
@@ -299,7 +303,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 
 if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	    OSYSDEBUG(("dritto\n"));
-	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
 	    command.head_lookat=vector3d(150,0,50);
@@ -315,7 +319,7 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	}
 	else if ((y_count[3][0] < 1000 )|| (y_count[2][0] < 1000 )){
     OSYSDEBUG(("sinistra 1\n"));
-	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
 	    command.head_lookat=vector3d(150,0,50);
@@ -333,7 +337,7 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	
 	else if ((y_count[3][1] < 1000 ) && y_count[3][2] < 1000  && y_count[2][1] < 1000){
 	    OSYSDEBUG(("sinistra 2\n"));
-	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
 	    command.head_lookat=vector3d(150,0,50);
@@ -349,7 +353,7 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	}
 	else {
 	    OSYSDEBUG(("destra\n"));
-	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
 	    command.head_lookat=vector3d(150,0,50);
