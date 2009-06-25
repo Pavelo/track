@@ -297,7 +297,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	memset(&command, 0, sizeof(command));
 
 
-	if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
+if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	    OSYSDEBUG(("dritto\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -314,40 +314,25 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	    Wait(static_cast<longword>(500000000));
 	}
 	else if ((y_count[3][0] < 1000 )|| (y_count[2][0] < 1000 )){
-		OSYSDEBUG(("destra\n"));
+    OSYSDEBUG(("sinistra 1\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
 	    command.head_lookat=vector3d(150,0,50);
 	    command.vx=0;
 	    command.vy=0;
-	    command.va=-0.25;
+	    command.va=0.35;
 	    if (sph ==1){
 	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
 	      subject[sbjMotionControl]->NotifyObservers();
 	      sph=0;
 	    }
-	    Wait(static_cast<longword>(1500000000));
-	}
-	else if(y_count[2][1] < 1000 || y_count[2][2] < 1000 ){
-		OSYSDEBUG(("destra\n"));
-	    command.motion_cmd=Motion::MOTION_WALK_TROT;
-	    command.head_cmd=Motion::HEAD_LOOKAT;
-	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
-	    command.vx=0;
-	    command.vy=0;
-	    command.va=-0.25;
-	    if (sph ==1){
-	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-	      subject[sbjMotionControl]->NotifyObservers();
-	      sph=0;
-	    }
-	    Wait(static_cast<longword>(1500000000));
+	    Wait(static_cast<longword>(200000000));
 	}
 	
-	else{
-	    OSYSDEBUG(("sinistra\n"));
+	
+	else if ((y_count[3][1] < 1000 ) && y_count[3][2] < 1000  && y_count[2][1] < 1000){
+	    OSYSDEBUG(("sinistra 2\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
@@ -362,6 +347,22 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	    }
 	    Wait(static_cast<longword>(1000000000));
 	}
+	else {
+	    OSYSDEBUG(("destra\n"));
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(150,0,50);
+	    command.vx=0;
+	    command.vy=0;
+	    command.va=-0.25;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(1500000000));
+	}	
 
 
 //OSYSDEBUG(("lum davanti: %d\n", y_count[3][1]));
