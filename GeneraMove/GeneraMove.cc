@@ -240,18 +240,18 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	{
 		for (y=0; y < grids_y; y++)
 		{
-		  if(x == 2   & (y == 1 || y == 2)){
+		  /*if(x == 2   & (y == 1 || y == 2)){
 		  	if (pix_count[x][y] > 410)
 				grid_matrix[x][y] = 0;
 			else
 				grid_matrix[x][y] = 100;
 		  }
-		  else{
+		  else{*/
 			if (pix_count[x][y] > thrs)
 				grid_matrix[x][y] = 0;
 			else
 				grid_matrix[x][y] = 100;
-		  }
+		  //}
 		}
 	}
 
@@ -260,7 +260,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	//int max_x = sizeof(grid_matrix[0]) / sizeof(int);
 	//int max_y = sizeof(grid_matrix) /sizeof(int);
 
-	for (y=0; y < grids_y; y++)
+/*	for (y=0; y < grids_y; y++)
 	{
 		for (x=0; x < grids_x; x++)
 		{
@@ -286,7 +286,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 		}
 	}
 
-
+*/
 	OSYSDEBUG(("grid matrix: %d  %d  %d  %d\n %d  %d  %d  %d \n\n", 
 	grid_matrix[2][0],grid_matrix[2][1],grid_matrix[2][2],grid_matrix[2][3],
 	grid_matrix[3][0],grid_matrix[3][1],grid_matrix[3][2],grid_matrix[3][3]));
@@ -310,7 +310,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	  subject[sbjMotionControl]->NotifyObservers();
 	  sph=0;
 	}
-	    Wait(static_cast<longword>(200000000));*/
+	    Wait(static_cast<longword>(200000000));
 
 if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	    OSYSDEBUG(("dritto\n"));
@@ -377,9 +377,42 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	      sph=0;
 	    }
 	    Wait(static_cast<longword>(1500000000));
-	}	
+	}	*/
+
+if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 || grid_matrix[0][3] == 0){
+	    OSYSDEBUG(("sinistra 2\n"));
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(150,0,50);
+	    command.vx=0;
+	    command.vy=0;
+	    command.va=0.55;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(1000000000));
 
 
+}
+else{
+	    OSYSDEBUG(("dritto\n"));
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(150,0,50);
+	    command.vx=100;
+	    command.vy=0;
+	    command.va=0.05;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(500000000));
+	}
 //OSYSDEBUG(("lum davanti: %d\n", y_count[3][1]));
 	observer[event.ObsIndex()]->AssertReady();
 }
