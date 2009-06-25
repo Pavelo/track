@@ -303,14 +303,14 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	Motion::MotionCommand searchBall;
 	memset(&searchBall, 0, sizeof(searchBall));
 	
-	OSYSDEBUG(("fermo\n"));
+/*	OSYSDEBUG(("fermo\n"));
 	searchBall.motion_cmd=Motion::MOTION_WALK_TROT;
 	if (sph ==1){
 	  subject[sbjMotionControl]->SetData(&searchBall,sizeof(Motion::MotionCommand));
 	  subject[sbjMotionControl]->NotifyObservers();
 	  sph=0;
 	}
-	    Wait(static_cast<longword>(200000000));
+	    Wait(static_cast<longword>(200000000));*/
 
 if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	    OSYSDEBUG(("dritto\n"));
@@ -410,7 +410,7 @@ GeneraMove::SetCdtVectorData()
 	MemoryRegionID  cdtVecID;
 	OCdtVectorData* cdtVec;
 	OCdtInfo*       cdtPink;
-	OCdtInfo*       cdtGray;
+	OCdtInfo*       cdtBlack;
 	OCdtInfo*       cdtWhite;
 
 	result = OPENR::NewCdtVectorData(&cdtVecID, &cdtVec);
@@ -466,44 +466,20 @@ GeneraMove::SetCdtVectorData()
 	cdtPink->Set(31, 230, 160, 190, 120);
 
 	// setting della CDT per il bordo grigio del tracciato
-	cdtGray = cdtVec->GetInfo(1);
-	cdtGray->Init(fbkID, ocdtCHANNEL1);
+	cdtBlack = cdtVec->GetInfo(1);
+	cdtBlack->Init(fbkID, ocdtCHANNEL1);
 
 	//
-	// cdtGray->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
+	// cdtBlack->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-		cdtGray->Set( 0, 118, 108, 133, 113);
-		cdtGray->Set( 1, 118, 108, 133, 113);
-		cdtGray->Set( 2, 118, 108, 133, 113);
-		cdtGray->Set( 3, 118, 108, 133, 113);
-		cdtGray->Set( 4, 118, 108, 133, 113);
-		cdtGray->Set( 5, 118, 108, 133, 113);
-		cdtGray->Set( 6, 118, 108, 133, 113);
-		cdtGray->Set( 7, 118, 108, 133, 113);
-		cdtGray->Set( 8, 118, 108, 133, 113);
-		cdtGray->Set( 9, 118, 108, 133, 113);
-		cdtGray->Set(10, 118, 108, 133, 113);
-		cdtGray->Set(11, 118, 108, 133, 113);
-		cdtGray->Set(12, 118, 108, 133, 113);
-		cdtGray->Set(13, 118, 108, 133, 113);
-		cdtGray->Set(14, 118, 108, 133, 113);
-		cdtGray->Set(15, 118, 108, 133, 113);
-		cdtGray->Set(16, 118, 108, 133, 113);
-		cdtGray->Set(17, 118, 108, 133, 113);
-		cdtGray->Set(18, 118, 108, 133, 113);
-		cdtGray->Set(19, 118, 108, 133, 113);
-		cdtGray->Set(20, 118, 108, 133, 113);
-		cdtGray->Set(21, 118, 108, 133, 113);
-		cdtGray->Set(22, 118, 108, 133, 113);
-		cdtGray->Set(23, 118, 108, 133, 113);
-		cdtGray->Set(24, 118, 108, 133, 113);
-		cdtGray->Set(25, 118, 108, 133, 113);
-		cdtGray->Set(26, 118, 108, 133, 113);
-		cdtGray->Set(27, 118, 108, 133, 113);
-		cdtGray->Set(28, 118, 108, 133, 113);
-		cdtGray->Set(29, 118, 108, 133, 113);
-		cdtGray->Set(30, 118, 108, 133, 113);
-		cdtGray->Set(31, 118, 108, 133, 113);
+cdtBlack->Set( 4, 129, 116, 145, 121);
+cdtBlack->Set( 5, 127, 112, 160, 119);
+cdtBlack->Set( 6, 127, 109, 159, 115);
+cdtBlack->Set( 7, 126, 108, 150, 110);
+cdtBlack->Set( 8, 122, 108, 137, 110);
+cdtBlack->Set( 9, 121, 108, 131, 110);
+cdtBlack->Set( 10, 121, 108, 127, 112);
+cdtBlack->Set( 11, 121, 110, 128, 117);
 
 
 	// setting della CDT per il bordo bianco del tracciato
@@ -513,52 +489,21 @@ GeneraMove::SetCdtVectorData()
 	//
 	// cdtWhite->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-	/*cdtWhite->Set( 0, 112, 111, 118, 117);
-	cdtWhite->Set( 1, 112, 111, 118, 117);
-	cdtWhite->Set( 2, 112, 111, 118, 117);
-	cdtWhite->Set( 3, 112, 111, 118, 117);
-	cdtWhite->Set( 4, 112, 111, 118, 117);
-	cdtWhite->Set( 5, 112, 111, 118, 117);
-	cdtWhite->Set( 6, 112, 111, 118, 117);
-	cdtWhite->Set( 7, 112, 111, 118, 117);
-	cdtWhite->Set( 8, 112, 111, 118, 117);
-	cdtWhite->Set( 9, 112, 111, 118, 117);
-	cdtWhite->Set(10, 112, 111, 118, 117);
-	cdtWhite->Set(11, 112, 111, 118, 117);
-	cdtWhite->Set(12, 112, 111, 118, 117);
-	cdtWhite->Set(13, 112, 111, 118, 117);
-	cdtWhite->Set(20, 112, 111, 118, 117);
-	cdtWhite->Set(21, 112, 111, 118, 117);
-	cdtWhite->Set(22, 112, 111, 118, 117);
-	cdtWhite->Set(23, 112, 111, 118, 117);
-	cdtWhite->Set(24, 112, 111, 118, 117);
-	cdtWhite->Set(25, 112, 111, 118, 117);
-	cdtWhite->Set(26, 112, 111, 118, 117);
-	cdtWhite->Set(27, 112, 111, 118, 117);
-	cdtWhite->Set(28, 112, 111, 118, 117);
-	cdtWhite->Set(29, 112, 111, 118, 117);
-	cdtWhite->Set(30, 112, 111, 118, 117);
-	cdtWhite->Set(31, 112, 111, 118, 117);
-	cdtWhite->Set( 15, 112, 111, 118, 117);
-	cdtWhite->Set( 17, 112, 111, 118, 117);
-	cdtWhite->Set( 16, 112, 111, 118, 117);
-	cdtWhite->Set( 19, 112, 111, 118, 117);
-	cdtWhite->Set( 18, 112, 111, 118, 117);
-	cdtWhite->Set( 14, 112, 111, 118, 117);*/
-
-
-
-	cdtWhite->Set( 1, 112, 111, 127, 122);
-	cdtWhite->Set( 2, 113, 111, 127, 122);
-	cdtWhite->Set( 3, 113, 111, 127, 122);
-	cdtWhite->Set( 4, 113, 111, 127, 122);
-	cdtWhite->Set( 5, 113, 111, 127, 122);
-	cdtWhite->Set( 6, 113, 111, 127, 122);
-	cdtWhite->Set( 7, 113, 111, 127, 122);
-	cdtWhite->Set( 8, 113, 111, 127, 122);
-	cdtWhite->Set( 9, 113, 111, 127, 122);
-	cdtWhite->Set(10, 113, 111, 127, 122);
-	cdtWhite->Set(11, 113, 111, 127, 122);
+/*cdtWhite->Set( 14, 115, 108, 134, 123);
+cdtWhite->Set( 15, 117, 108, 128, 117);
+cdtWhite->Set( 16, 116, 106, 128, 115);
+cdtWhite->Set( 17, 114, 108, 128, 114);
+cdtWhite->Set( 18, 114, 105, 124, 114);
+cdtWhite->Set( 19, 114, 105, 121, 113);
+cdtWhite->Set( 20, 111, 105, 119, 112);*/
+cdtWhite->Set( 13, 112, 103, 141, 123);
+cdtWhite->Set( 14, 115, 105, 139, 123);
+cdtWhite->Set( 15, 118, 106, 136, 117);
+cdtWhite->Set( 16, 116, 106, 133, 115);
+cdtWhite->Set( 17, 114, 108, 128, 114);
+cdtWhite->Set( 18, 114, 105, 124, 114);
+cdtWhite->Set( 19, 114, 105, 121, 113);
+cdtWhite->Set( 20, 111, 105, 119, 112);
 
 
 	result = OPENR::SetCdtVectorData(cdtVecID);
