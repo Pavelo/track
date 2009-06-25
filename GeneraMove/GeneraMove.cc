@@ -300,6 +300,17 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	Motion::MotionCommand command;
 	memset(&command, 0, sizeof(command));
 
+	Motion::MotionCommand searchBall;
+	memset(&searchBall, 0, sizeof(searchBall));
+	
+	OSYSDEBUG(("fermo\n"));
+	searchBall.motion_cmd=Motion::MOTION_WALK_TROT;
+	if (sph ==1){
+	  subject[sbjMotionControl]->SetData(&searchBall,sizeof(Motion::MotionCommand));
+	  subject[sbjMotionControl]->NotifyObservers();
+	  sph=0;
+	}
+	    Wait(static_cast<longword>(200000000));
 
 if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	    OSYSDEBUG(("dritto\n"));
