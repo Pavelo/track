@@ -214,19 +214,25 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	}
 	int thrs = 150;
 
+	int red_count = 0;
+	
+	
 	int x, y;
-
 	for (x=0; x < width; x++)
 	{
 		for (y=0; y < height; y++)
 		{
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)	// canale del grigio/pista
+			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)	// canale del nero
 			{
 				m = (int) floor( (float) (x * grids_x) / (float) width );
 				n = (int) floor( (float) (y * grids_y) / (float) height );
 				pix_count[m][n]++;
 			}
-			y_count[m][n] += (int) floor((float)yImage.Pixel(x,y)/(float)8);
+			if (cdtImage.Pixel(x, y) & ocdtCHANNEL2)	// canale del bianco
+			{
+				red_count+=1;
+			}
+
 		}
 	}
 
@@ -387,15 +393,29 @@ if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 ||
 	    command.head_lookat=vector3d(150,0,50);
 	    command.vx=0;
 	    command.vy=0;
-	    command.va=0.55;
+	    command.va=0.95;
 	    if (sph ==1){
 	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
 	      subject[sbjMotionControl]->NotifyObservers();
 	      sph=0;
 	    }
 	    Wait(static_cast<longword>(1000000000));
-
-
+}
+else if(red_count > 2000){
+	    OSYSDEBUG(("destra\n"));
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(150,0,50);
+	    command.vx=0;
+	    command.vy=0;
+	    command.va=-0.85;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(1500000000));
 }
 else{
 	    OSYSDEBUG(("dritto\n"));
@@ -413,7 +433,8 @@ else{
 	    }
 	    Wait(static_cast<longword>(500000000));
 	}
-//OSYSDEBUG(("lum davanti: %d\n", y_count[3][1]));
+	
+	OSYSDEBUG(("pixel rossi: %d\n",red_count));
 	observer[event.ObsIndex()]->AssertReady();
 }
 
