@@ -17,6 +17,7 @@ int grids_x = 4;
 int grids_y = 4;
 int last_turn_left = 0;
 int walks = 0;
+int kick_next = 0;
   /** Stati di Touched.*/
   enum
     {
@@ -215,7 +216,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	}
 	int thrs = 150;
 
-	int red_count = 0;
+	int white_count = 0;
 	
 	
 	int x, y;
@@ -231,7 +232,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 			}
 			if (cdtImage.Pixel(x, y) & ocdtCHANNEL2)	// canale del bianco
 			{
-				red_count+=1;
+				white_count+=1;
 			}
 			if (cdtImage.Pixel(x, y) & ocdtCHANNEL0)	// canale del nero
 			{
@@ -395,17 +396,24 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	    Wait(static_cast<longword>(1500000000));
 	}	*/
 
-if ((grid_matrix[3][1] == 5 || grid_matrix[3][2] == 5 ||
-	grid_matrix[3][3] == 5 || grid_matrix[3][0] == 5) /*&& walks >= 11*/){
+if ((grid_matrix[3][0] == 5 || grid_matrix[3][1] == 5 ||
+	grid_matrix[3][2] == 5 || grid_matrix[3][3] == 5 || 
+	grid_matrix[2][0] == 5 || grid_matrix[2][1] == 5 ||
+	grid_matrix[2][2] == 5 || grid_matrix[2][3] == 5 || 
+	grid_matrix[1][0] == 5 || grid_matrix[1][1] == 5 ||
+	grid_matrix[1][2] == 5 || grid_matrix[1][3] == 5 ||
+	grid_matrix[0][0] == 5 || grid_matrix[0][1] == 5 ||
+	grid_matrix[0][2] == 5 || grid_matrix[0][3] == 5) ){
+		kick_next = 1;
+}
 
-
-			walks = 0;
-		
-	    OSYSDEBUG(("sinistra 2\n"));
-	    command.motion_cmd=Motion::MOTION_KICK_FOREWARD;
+else if (kick_next == 1 && walks == 4){
+		walks = 0;
+		kick_next = 0;
+	    //command.motion_cmd=Motion::MOTION_KICK_FOREWARD;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(200,0,50);
+	    command.head_lookat=vector3d(150,0,50);
 	    command.vx=0;
 	    command.vy=0;
 	    command.va=0.65;
@@ -416,13 +424,14 @@ if ((grid_matrix[3][1] == 5 || grid_matrix[3][2] == 5 ||
 	    }
 	    Wait(static_cast<longword>(1000000000));
 }
+
 else if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 || grid_matrix[0][3] == 0){
 	    last_turn_left = 1;
 	    OSYSDEBUG(("sinistra 2\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(200,0,50);
+	    command.head_lookat=vector3d(150,0,50);
 	    command.vx=0;
 	    command.vy=0;
 	    command.va=0.65;
@@ -433,12 +442,12 @@ else if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] ==
 	    }
 	    Wait(static_cast<longword>(1000000000));
 }
-else if(red_count > 4000 && last_turn_left == 0){
+else if(white_count > 3900 && last_turn_left == 0){
 	    OSYSDEBUG(("destra\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(200,0,50);
+	    command.head_lookat=vector3d(150,0,50);
 	    command.vx=0;
 	    command.vy=0;
 	    command.va=-0.55;
@@ -459,7 +468,7 @@ else{
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(200,0,50);
+	    command.head_lookat=vector3d(150,0,50);
 	    command.vx=100;
 	    command.vy=0;
 	    command.va=0.05;
@@ -471,7 +480,7 @@ else{
 	    Wait(static_cast<longword>(500000000));
 	}
 	
-	OSYSDEBUG(("pixel rossi: %d\n",red_count));
+	OSYSDEBUG(("pixel bianchi: %d\n",white_count));
 	observer[event.ObsIndex()]->AssertReady();
 }
 
