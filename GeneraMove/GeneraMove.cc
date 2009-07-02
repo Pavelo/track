@@ -204,14 +204,14 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	int m = 0;
 	int n = 0;
 	//int pix_count[grids_x][grids_y];
-	int **y_count = (int**) calloc(grids_x, sizeof(int*));
+	int **ball_count = (int**) calloc(grids_x, sizeof(int*));
 	 int **pix_count = (int**) calloc(grids_x, sizeof(int*));
 	 int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
 	for (int i=0; i<grids_x; i++)
 	{
 		grid_matrix[i] = (int*) calloc(grids_y, sizeof(int));
 		pix_count[i] = (int*) calloc(grids_y, sizeof(int));
-		y_count[i] = (int*) calloc(grids_y, sizeof(int));
+		ball_count[i] = (int*) calloc(grids_y, sizeof(int));
 	}
 	int thrs = 150;
 
@@ -233,7 +233,13 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 			{
 				red_count+=1;
 			}
-
+			if (cdtImage.Pixel(x, y) & ocdtCHANNEL0)	// canale del nero
+			{
+				m = (int) floor( (float) (x * grids_x) / (float) width );
+				n = (int) floor( (float) (y * grids_y) / (float) height );
+				ball_count[m][n]++;
+			}
+			
 		}
 	}
 
@@ -258,6 +264,9 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 				grid_matrix[x][y] = 0;
 			else
 				grid_matrix[x][y] = 100;
+
+			if (ball_count[x][y] > 2)
+				grid_matrix[x][y] = 5;
 		  //}
 		}
 	}
@@ -299,8 +308,8 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	grid_matrix[3][0],grid_matrix[3][1],grid_matrix[3][2],grid_matrix[3][3]));
 	
 	OSYSDEBUG(("lum:\n %d  %d  %d  %d\n %d  %d  %d  %d \n", 
-	y_count[2][0],y_count[2][1],y_count[2][2],y_count[2][3],
-	y_count[3][0],y_count[3][1],y_count[3][2],y_count[3][3]));
+	ball_count[2][0],ball_count[2][1],ball_count[2][2],ball_count[2][3],
+	ball_count[3][0],ball_count[3][1],ball_count[3][2],ball_count[3][3]));
 	
 	OSYSDEBUG(("YCbCr pixel centrale (52,40): %d %d %d\n", yImage.Pixel(52,40), CbImage.Pixel(52,40), CrImage.Pixel(52,40)));
 
@@ -335,7 +344,7 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	    }
 	    Wait(static_cast<longword>(500000000));
 	}
-	else if ((y_count[3][0] < 1000 )|| (y_count[2][0] < 1000 )){
+	else if ((ball_count[3][0] < 1000 )|| (ball_count[2][0] < 1000 )){
     OSYSDEBUG(("sinistra 1\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -353,7 +362,7 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	}
 	
 	
-	else if ((y_count[3][1] < 1000 ) && y_count[3][2] < 1000  && y_count[2][1] < 1000){
+	else if ((ball_count[3][1] < 1000 ) && ball_count[3][2] < 1000  && ball_count[2][1] < 1000){
 	    OSYSDEBUG(("sinistra 2\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -386,7 +395,28 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	    Wait(static_cast<longword>(1500000000));
 	}	*/
 
-if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 || grid_matrix[0][3] == 0){
+if ((grid_matrix[3][1] == 5 || grid_matrix[3][2] == 5 ||
+	grid_matrix[3][3] == 5 || grid_matrix[3][0] == 5) /*&& walks >= 11*/){
+
+
+			walks = 0;
+		
+	    OSYSDEBUG(("sinistra 2\n"));
+	    command.motion_cmd=Motion::MOTION_KICK_FOREWARD;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(200,0,50);
+	    command.vx=0;
+	    command.vy=0;
+	    command.va=0.65;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(1000000000));
+}
+else if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 || grid_matrix[0][3] == 0){
 	    last_turn_left = 1;
 	    OSYSDEBUG(("sinistra 2\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
@@ -420,7 +450,7 @@ else if(red_count > 4000 && last_turn_left == 0){
 	    Wait(static_cast<longword>(1500000000));
 }
 else{
-		if (walks >= 6){
+		if (walks >= 13){
 			last_turn_left = 0;
 			walks = 0;
 		}
