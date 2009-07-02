@@ -204,19 +204,21 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	int height = cdtImage.Height();    
 	int m = 0;
 	int n = 0;
-	//int pix_count[grids_x][grids_y];
+	//int black_count[grids_x][grids_y];
 	int **ball_count = (int**) calloc(grids_x, sizeof(int*));
-	 int **pix_count = (int**) calloc(grids_x, sizeof(int*));
+	 int **black_count = (int**) calloc(grids_x, sizeof(int*));
+	 int **white_count = (int**) calloc(grids_x, sizeof(int*));
 	 int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
 	for (int i=0; i<grids_x; i++)
 	{
 		grid_matrix[i] = (int*) calloc(grids_y, sizeof(int));
-		pix_count[i] = (int*) calloc(grids_y, sizeof(int));
+		black_count[i] = (int*) calloc(grids_y, sizeof(int));
+		white_count[i] = (int*) calloc(grids_y, sizeof(int));
 		ball_count[i] = (int*) calloc(grids_y, sizeof(int));
 	}
 	int thrs = 150;
 
-	int white_count = 0;
+	int w_count = 0;
 	
 	
 	int x, y;
@@ -224,21 +226,24 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	{
 		for (y=0; y < height; y++)
 		{
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)	// canale del nero
-			{
-				m = (int) floor( (float) (x * grids_x) / (float) width );
-				n = (int) floor( (float) (y * grids_y) / (float) height );
-				pix_count[m][n]++;
-			}
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL2)	// canale del bianco
-			{
-				white_count+=1;
-			}
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL0)	// canale del nero
+			if (cdtImage.Pixel(x, y) & ocdtCHANNEL0)	// canale del rosa
 			{
 				m = (int) floor( (float) (x * grids_x) / (float) width );
 				n = (int) floor( (float) (y * grids_y) / (float) height );
 				ball_count[m][n]++;
+			}
+			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)	// canale del nero
+			{
+				m = (int) floor( (float) (x * grids_x) / (float) width );
+				n = (int) floor( (float) (y * grids_y) / (float) height );
+				black_count[m][n]++;
+			}
+			if (cdtImage.Pixel(x, y) & ocdtCHANNEL2)	// canale del bianco
+			{
+				w_count+=1;
+				m = (int) floor( (float) (x * grids_x) / (float) width );
+				n = (int) floor( (float) (y * grids_y) / (float) height );
+				white_count[m][n]++;		
 			}
 			
 		}
@@ -255,24 +260,27 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 		for (y=0; y < grids_y; y++)
 		{
 		  /*if(x == 2   & (y == 1 || y == 2)){
-		  	if (pix_count[x][y] > 410)
+		  	if (black_count[x][y] > 410)
 				grid_matrix[x][y] = 0;
 			else
 				grid_matrix[x][y] = 100;
 		  }
 		  else{*/
-			if (pix_count[x][y] > thrs)
+			if (black_count[x][y] > thrs)
 				grid_matrix[x][y] = 0;
 			else
 				grid_matrix[x][y] = 100;
 
 			if (ball_count[x][y] > 2)
 				grid_matrix[x][y] = 5;
+
+			if (white_count[x][y] > 375)
+				grid_matrix[x][y] = 50;
 		  //}
 		}
 	}
 
-	//OSYSDEBUG(("pix count: %d  %d  %d  %d\n", pix_count[3][1],pix_count[3][2],pix_count[2][1],pix_count[2][2]));
+	//OSYSDEBUG(("pix count: %d  %d  %d  %d\n", black_count[3][1],black_count[3][2],black_count[2][1],black_count[2][2]));
 	//minefield
 	//int max_x = sizeof(grid_matrix[0]) / sizeof(int);
 	//int max_y = sizeof(grid_matrix) /sizeof(int);
@@ -304,13 +312,21 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	}
 
 */
-	OSYSDEBUG(("grid matrix: %d  %d  %d  %d\n %d  %d  %d  %d \n\n", 
+	OSYSDEBUG(("grid matrix:\n %d  %d  %d  %d\n %d  %d  %d  %d \n %d  %d  %d  %d\n %d  %d  %d  %d\n\n", 
+	grid_matrix[0][0],grid_matrix[0][1],grid_matrix[0][2],grid_matrix[0][3],
+	grid_matrix[1][0],grid_matrix[1][1],grid_matrix[1][2],grid_matrix[1][3],	
 	grid_matrix[2][0],grid_matrix[2][1],grid_matrix[2][2],grid_matrix[2][3],
-	grid_matrix[3][0],grid_matrix[3][1],grid_matrix[3][2],grid_matrix[3][3]));
+	grid_matrix[3][0],grid_matrix[3][1],grid_matrix[3][2],grid_matrix[3][3]));	
 	
-	OSYSDEBUG(("lum:\n %d  %d  %d  %d\n %d  %d  %d  %d \n", 
+	OSYSDEBUG(("ball count:\n %d  %d  %d  %d\n %d  %d  %d  %d \n\n", 
 	ball_count[2][0],ball_count[2][1],ball_count[2][2],ball_count[2][3],
 	ball_count[3][0],ball_count[3][1],ball_count[3][2],ball_count[3][3]));
+	
+	OSYSDEBUG(("white count:\n %d  %d  %d  %d\n %d  %d  %d  %d \n %d  %d  %d  %d\n %d  %d  %d  %d\n\n", 
+	white_count[0][0],white_count[0][1],white_count[0][2],white_count[0][3],
+	white_count[1][0],white_count[1][1],white_count[1][2],white_count[1][3],	
+	white_count[2][0],white_count[2][1],white_count[2][2],white_count[2][3],
+	white_count[3][0],white_count[3][1],white_count[3][2],white_count[3][3]));	
 	
 	OSYSDEBUG(("YCbCr pixel centrale (52,40): %d %d %d\n", yImage.Pixel(52,40), CbImage.Pixel(52,40), CrImage.Pixel(52,40)));
 
@@ -427,7 +443,7 @@ else if (kick_next == 1 && walks == 4){
 
 else if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 || grid_matrix[0][3] == 0){
 	    last_turn_left = 1;
-	    OSYSDEBUG(("sinistra 2\n"));
+	    OSYSDEBUG(("sinistra\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
@@ -442,7 +458,7 @@ else if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] ==
 	    }
 	    Wait(static_cast<longword>(1000000000));
 }
-else if(white_count > 3900 && last_turn_left == 0){
+else if(grid_matrix[1][1] == 50 || grid_matrix[1][2] == 50 || grid_matrix[2][1] == 50 || grid_matrix[2][2] == 50){
 	    OSYSDEBUG(("destra\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -459,7 +475,7 @@ else if(white_count > 3900 && last_turn_left == 0){
 	    Wait(static_cast<longword>(1500000000));
 }
 else{
-		if (walks >= 13){
+		if (walks >= 3){
 			last_turn_left = 0;
 			walks = 0;
 		}
@@ -480,7 +496,7 @@ else{
 	    Wait(static_cast<longword>(500000000));
 	}
 	
-	OSYSDEBUG(("pixel bianchi: %d\n",white_count));
+	OSYSDEBUG(("pixel bianchi: %d\n",w_count));
 	observer[event.ObsIndex()]->AssertReady();
 }
 
@@ -718,7 +734,7 @@ GeneraMove::Grid(OFbkImageVectorData* imageVec)
 	int height = cdtImage.Height();
 	int m = 0;
 	int n = 0;
-	int pix_count[grids_x][grids_y];
+	int black_count[grids_x][grids_y];
 	 int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
 	for (int i=0; i<grids_x; i++)
 	{
@@ -736,7 +752,7 @@ GeneraMove::Grid(OFbkImageVectorData* imageVec)
 			{
 				m = (int) floor( (float) (x * grids_x) / (float) width );
 				n = (int) floor( (float) (y * grids_y) / (float) height );
-				pix_count[m][n]++;
+				black_count[m][n]++;
 			}
 		}
 	}
@@ -751,7 +767,7 @@ GeneraMove::Grid(OFbkImageVectorData* imageVec)
 	{
 		for (y=0; y < grids_y; y++)
 		{
-			if (pix_count[x][y] > thrs)
+			if (black_count[x][y] > thrs)
 				grid_matrix[x][y] = 0;
 			else
 				grid_matrix[x][y] = 100;
