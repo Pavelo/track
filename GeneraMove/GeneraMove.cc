@@ -18,17 +18,20 @@ int grids_y = 4;
 int last_turn_left = 0;
 int walks = 0;
 int kick_next = 0;
-  /** Stati di Touched.*/
-  enum
-    {
-      IDLE, /**< Non so facendo nulla.*/
-      MOVING, /**< Mi sto muovendo.*/
-    } mState;
+
+
+
+
 
 GeneraMove::GeneraMove(){
 	sph = 0;
+	walk_period = 0;
 	imageVec = NULL;
 	fbkID = oprimitiveID_UNDEF;
+	state = WALKING;
+	found_ball = NONE;
+	last_head_turn = FRONT;
+	strong_turn_rate = NONE;
 }
 
 
@@ -79,7 +82,6 @@ OStatus GeneraMove::DoStart(const OSystemEvent& event){
 	ENABLE_ALL_SUBJECT;
 	ASSERT_READY_TO_ALL_OBSERVER;
 	count=0;
-
 	// Accendo i motori (per scrupolo)
 	OPENR::SetMotorPower(opowerON);
 
@@ -129,56 +131,6 @@ OStatus GeneraMove::DoDestroy(const OSystemEvent& event){
 
 
 
-void GeneraMove::Walk()
-{
-	 	    Wait(static_cast<longword>(2000000000));
-  	OSYSDEBUG(("Entrato in walk\n"));
-	//int** grid_matrix = Grid(imageVec);
-	int i = 0;
-	while (i < 10)
-	{
-		int** grid_matrix = Grid(imageVec);
-		
-		// solo per testare momentaneamente
-		if (i == 0){
-		  grid_matrix[3][1] = 2;
-		}
-		else{
-		  grid_matrix[3][1] = 4;
-		} // fine test momentaneo, poi eliminare
-		    
-		if (grid_matrix[3][1] < 3)
-		  {
-		    Motion::MotionCommand command;
-		    memset(&command, 0, sizeof(command));
-		    command.motion_cmd=Motion::MOTION_WALK_TROT;
-		    command.head_cmd=Motion::HEAD_LOOKAT;
-		    command.tail_cmd=Motion::TAIL_NO_CMD;
-		    command.head_lookat=vector3d(150,0,50);
-		    command.vx=100;
-		    command.vy=0;
-		    command.va=0.5;
-		    subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-		    subject[sbjMotionControl]->NotifyObservers();
-		    Wait(static_cast<longword>(2000000000));
-		  }
-		else
-		  {
-		    Motion::MotionCommand command;
-		    memset(&command, 0, sizeof(command));
-		    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
-		    command.head_cmd=Motion::HEAD_LOOKAT;
-		    command.tail_cmd=Motion::TAIL_NO_CMD;
-		    command.head_lookat=vector3d(150,0,50);
-		    subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-		    subject[sbjMotionControl]->NotifyObservers();
-		    Wait(static_cast<longword>(2000000000));
-		  }
-
-		i++;
-	}
-
-}
 
 /** Funzione invocata al ricevimento di un Assert Ready da parte di
     Motion.*/
@@ -204,11 +156,15 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	int height = cdtImage.Height();    
 	int m = 0;
 	int n = 0;
-	//int black_count[grids_x][grids_y];
+	//int pix_count[grids_x][grids_y];
 	int **ball_count = (int**) calloc(grids_x, sizeof(int*));
-	 int **black_count = (int**) calloc(grids_x, sizeof(int*));
-	 int **white_count = (int**) calloc(grids_x, sizeof(int*));
-	 int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
+
+	int **black_count = (int**) calloc(grids_x, sizeof(int*));
+	int **white_count = (int**) calloc(grids_x, sizeof(int*));
+	int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
+
+
+	 
 	for (int i=0; i<grids_x; i++)
 	{
 		grid_matrix[i] = (int*) calloc(grids_y, sizeof(int));
@@ -217,101 +173,51 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 		ball_count[i] = (int*) calloc(grids_y, sizeof(int));
 	}
 	int thrs = 150;
-
-	int w_count = 0;
-	
 	
 	int x, y;
 	for (x=0; x < width; x++)
-	{
-		for (y=0; y < height; y++)
-		{
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL0)	// canale del rosa
-			{
-				m = (int) floor( (float) (x * grids_x) / (float) width );
-				n = (int) floor( (float) (y * grids_y) / (float) height );
-				ball_count[m][n]++;
-			}
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)	// canale del nero
-			{
-				m = (int) floor( (float) (x * grids_x) / (float) width );
-				n = (int) floor( (float) (y * grids_y) / (float) height );
-				black_count[m][n]++;
-			}
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL2)	// canale del bianco
-			{
-				w_count+=1;
-				m = (int) floor( (float) (x * grids_x) / (float) width );
-				n = (int) floor( (float) (y * grids_y) / (float) height );
-				white_count[m][n]++;		
-			}
-			
-		}
-	}
+	  {
+	    for (y=0; y < height; y++)
+	      {
+		if (cdtImage.Pixel(x, y) & ocdtCHANNEL0)  // canale del rosa
+		  {
+		    m = (int) floor( (float) (x * grids_x) / (float) width );
+		    n = (int) floor( (float) (y * grids_y) / (float) height );
+		    ball_count[m][n]++;
+		  }
+		if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)  // canale del nero
+		  {
+		    m = (int) floor( (float) (x * grids_x) / (float) width );
+		    n = (int) floor( (float) (y * grids_y) / (float) height );
+		    black_count[m][n]++;
+		  }
+		if (cdtImage.Pixel(x, y) & ocdtCHANNEL2)  // canale del bianco
+		  {
+		    m = (int) floor( (float) (x * grids_x) / (float) width );
+		    n = (int) floor( (float) (y * grids_y) / (float) height );
+		    white_count[m][n]++;    
+		  }
+	      }
+	  }
 
-	//calc_grid
-	//int step_x = width/grids_x;
-	//int step_y = height/grids_y;
-	//int x_rett = 0;
-	//int y_rett = 0;
 
 	for (x=0; x < grids_x; x++)
 	{
 		for (y=0; y < grids_y; y++)
 		{
-		  /*if(x == 2   & (y == 1 || y == 2)){
-		  	if (black_count[x][y] > 410)
-				grid_matrix[x][y] = 0;
-			else
-				grid_matrix[x][y] = 100;
-		  }
-		  else{*/
 			if (black_count[x][y] > thrs)
-				grid_matrix[x][y] = 0;
+			  grid_matrix[x][y] = 0;
 			else
-				grid_matrix[x][y] = 100;
+			  grid_matrix[x][y] = 100;
 
-			if (ball_count[x][y] > 2)
-				grid_matrix[x][y] = 5;
+			if (ball_count[x][y] > 20)
+			  grid_matrix[x][y] = 5;
 
-			if (white_count[x][y] > 375)
-				grid_matrix[x][y] = 50;
-		  //}
+			if (white_count[x][y] > 380)
+			  grid_matrix[x][y] = 50;
 		}
 	}
 
-	//OSYSDEBUG(("pix count: %d  %d  %d  %d\n", black_count[3][1],black_count[3][2],black_count[2][1],black_count[2][2]));
-	//minefield
-	//int max_x = sizeof(grid_matrix[0]) / sizeof(int);
-	//int max_y = sizeof(grid_matrix) /sizeof(int);
-
-/*	for (y=0; y < grids_y; y++)
-	{
-		for (x=0; x < grids_x; x++)
-		{
-			if (grid_matrix[x][y] == 100)
-			{
-				if ((x+1 < grids_x) && (grid_matrix[x+1][y] != 100))
-					grid_matrix[x+1][y]+=1;
-                if ((y+1 < grids_y) && (grid_matrix[x][y+1] != 100))
-                    grid_matrix[x][y+1]+=1;
-                if ((x+1 < grids_x) && (y+1 < grids_y) && (grid_matrix[x+1][y+1] != 100))
-                    grid_matrix[x+1][y+1]+=1;
-                if ((y-1 >= 0) && (x-1 > 0) && (grid_matrix[x-1][y-1] != 100))
-                    grid_matrix[x-1][y-1]+=1;
-                if ((y-1 >= 0) && (grid_matrix[x][y-1] != 100))
-                    grid_matrix[x][y-1]+=1;
-                if ((x-1 >= 0) && (grid_matrix[x-1][y] != 100))
-                    grid_matrix[x-1][y]+=1;
-                if ((y-1 >= 0) && (x+1 < grids_x) && (grid_matrix[x+1][y-1] != 100))
-                    grid_matrix[x+1][y-1]+=1;
-                if ((x-1 >= 0) && (y+1 < grids_y) && (grid_matrix[x-1][y+1] != 100))
-                    grid_matrix[x-1][y+1]+=1;
-			}
-		}
-	}
-
-*/
 	OSYSDEBUG(("grid matrix:\n %d  %d  %d  %d\n %d  %d  %d  %d \n %d  %d  %d  %d\n %d  %d  %d  %d\n\n", 
 	grid_matrix[0][0],grid_matrix[0][1],grid_matrix[0][2],grid_matrix[0][3],
 	grid_matrix[1][0],grid_matrix[1][1],grid_matrix[1][2],grid_matrix[1][3],	
@@ -326,31 +232,204 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	white_count[0][0],white_count[0][1],white_count[0][2],white_count[0][3],
 	white_count[1][0],white_count[1][1],white_count[1][2],white_count[1][3],	
 	white_count[2][0],white_count[2][1],white_count[2][2],white_count[2][3],
-	white_count[3][0],white_count[3][1],white_count[3][2],white_count[3][3]));	
+	white_count[3][0],white_count[3][1],white_count[3][2],white_count[3][3]));
 	
-	OSYSDEBUG(("YCbCr pixel centrale (52,40): %d %d %d\n", yImage.Pixel(52,40), CbImage.Pixel(52,40), CrImage.Pixel(52,40)));
-
 	Motion::MotionCommand command;
 	memset(&command, 0, sizeof(command));
 
 	Motion::MotionCommand searchBall;
 	memset(&searchBall, 0, sizeof(searchBall));
 	
-/*	OSYSDEBUG(("fermo\n"));
-	searchBall.motion_cmd=Motion::MOTION_WALK_TROT;
-	if (sph ==1){
-	  subject[sbjMotionControl]->SetData(&searchBall,sizeof(Motion::MotionCommand));
-	  subject[sbjMotionControl]->NotifyObservers();
-	  sph=0;
-	}
-	    Wait(static_cast<longword>(200000000));
+	
+	int ball_grids = 0;
+	int *ball_row_matrix = (int*) calloc(grids_y, sizeof(int));
 
-if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
-	    OSYSDEBUG(("dritto\n"));
+	
+	// conto quanti sono i quadrati occupati dalla palla
+	// e quante righe sono piene
+	for (x=0; x < grids_x; x++)
+	  {
+	    for (y=0; y < grids_y; y++)
+	      {
+		if (grid_matrix[x][y] == 5){
+		  ball_grids += 1;
+		  ball_row_matrix[y] += 1;
+		}
+		    
+	      }
+	  }
+
+	// ricerca palla
+	if ( (state == SEARCHING_BALL || state == PRE_WALKING ) && ball_grids >= 1){
+	  
+	  // se la palla è agli estremi
+	  if ( ball_row_matrix[0] >= 2 && ball_row_matrix[1] >= 1 &&  ball_row_matrix[2] <= 1 && ball_row_matrix[3] <= 1){
+	    strong_turn_rate = LEFT;
+	  }
+	  else if(ball_row_matrix[3] >= 2 && ball_row_matrix[2] >= 1 &&  ball_row_matrix[1] <= 1 && ball_row_matrix[0] <= 1 ){
+	    strong_turn_rate = RIGTH;
+	  }
+	  found_ball = last_head_turn;
+	  state = TRACKING_BALL;
+	  last_head_turn = FRONT;
+	}
+	// inseguimento palla
+	else if( state == TRACKING_BALL && ball_grids >= 1){
+	  state = KICKING_BALL;
+	}
+	else if( state == PRE_WALKING ){
+	  state = WALKING;
+	}
+
+
+	// guarda a sinistra, poi guarda a destra, poi guarda dritto
+	if( state == SEARCHING_BALL){
+	  // guardo a sinistra
+	  if(last_head_turn == FRONT){
+	    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(200,180,50);
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    
+	    last_head_turn = LEFT;
+
+	    Wait(static_cast<longword>(500000000));
+	  }
+	  // guardo a destra
+	  else if(last_head_turn == LEFT){
+	    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(200,-180,50);
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+
+	    last_head_turn = RIGTH;
+
+
+	    Wait(static_cast<longword>(500000000));
+	  }
+	  else if(last_head_turn == RIGTH){  
+	    command.motion_cmd=Motion::MOTION_STAND_NEUTRAL;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(200,0,50);
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+
+	    last_head_turn = FRONT;
+	    state = PRE_WALKING;
+	    Wait(static_cast<longword>(500000000));
+	  }
+	}
+	
+	// 
+	//  *   TRACKING  *
+	//
+	else if ( state == TRACKING_BALL ){
+	  if (found_ball == LEFT){
+	    found_ball = NONE;
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
 	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
+	    command.head_lookat=vector3d(100,0,50);
+	    command.vx=100;
+	    command.vy=0;
+
+	    if (strong_turn_rate == LEFT)
+	      command.va=0.85;
+	    else
+	      command.va=0.45;
+
+	    strong_turn_rate = NONE;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(500000000));
+	  }
+	  else if (found_ball == RIGTH){
+	    found_ball = NONE;
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(100,0,50);
+	    command.vx=100;
+	    command.vy=0;
+
+
+	    if (strong_turn_rate == RIGTH)
+	      command.va=-0.85;
+	    else
+	      command.va=-0.45;
+
+	    strong_turn_rate = NONE;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(500000000));
+	      }
+	  else{
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(100,0,50);
+	    command.vx=100;
+	    command.vy=0;
+
+	    if (strong_turn_rate == RIGTH)
+	      command.va=-0.15;
+	    else if (strong_turn_rate == LEFT)
+	      command.va=0.15;
+	    else
+	      command.va=0.05;
+
+	    strong_turn_rate = NONE;
+
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(500000000));
+	      }
+	}
+	else if (state == KICKING_BALL){
+	  
+	  if (approaching == 0){
+	    state = SEARCHING_BALL;
+	    approaching = 1;
+
+	    command.motion_cmd=Motion::MOTION_KICK_FOREWARD;
+	    command.head_cmd=Motion::HEAD_NO_CMD;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    if (sph ==1){
+	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
+	      subject[sbjMotionControl]->NotifyObservers();
+	      sph=0;
+	    }
+	    Wait(static_cast<longword>(1000000000));
+	  }
+	  else{
+	    approaching = 0;
+	    command.motion_cmd=Motion::MOTION_WALK_TROT;
+	    command.head_cmd=Motion::HEAD_LOOKAT;
+	    command.tail_cmd=Motion::TAIL_NO_CMD;
+	    command.head_lookat=vector3d(100,0,50);
 	    command.vx=100;
 	    command.vy=0;
 	    command.va=0.05;
@@ -360,88 +439,23 @@ if(grid_matrix[3][1] < 3 && grid_matrix[3][2] < 3 && grid_matrix[2][1] < 3){
 	      sph=0;
 	    }
 	    Wait(static_cast<longword>(500000000));
-	}
-	else if ((ball_count[3][0] < 1000 )|| (ball_count[2][0] < 1000 )){
-    OSYSDEBUG(("sinistra 1\n"));
-	    command.motion_cmd=Motion::MOTION_WALK_TROT;
-	    command.head_cmd=Motion::HEAD_LOOKAT;
-	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
-	    command.vx=0;
-	    command.vy=0;
-	    command.va=0.55;
-	    if (sph ==1){
-	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-	      subject[sbjMotionControl]->NotifyObservers();
-	      sph=0;
-	    }
-	    Wait(static_cast<longword>(200000000));
+	  }
 	}
 	
-	
-	else if ((ball_count[3][1] < 1000 ) && ball_count[3][2] < 1000  && ball_count[2][1] < 1000){
-	    OSYSDEBUG(("sinistra 2\n"));
-	    command.motion_cmd=Motion::MOTION_WALK_TROT;
-	    command.head_cmd=Motion::HEAD_LOOKAT;
-	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
-	    command.vx=0;
-	    command.vy=0;
-	    command.va=0.55;
-	    if (sph ==1){
-	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-	      subject[sbjMotionControl]->NotifyObservers();
-	      sph=0;
-	    }
-	    Wait(static_cast<longword>(1000000000));
-	}
-	else {
-	    OSYSDEBUG(("destra\n"));
-	    command.motion_cmd=Motion::MOTION_WALK_TROT;
-	    command.head_cmd=Motion::HEAD_LOOKAT;
-	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
-	    command.vx=0;
-	    command.vy=0;
-	    command.va=-0.45;
-	    if (sph ==1){
-	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-	      subject[sbjMotionControl]->NotifyObservers();
-	      sph=0;
-	    }
-	    Wait(static_cast<longword>(1500000000));
-	}	*/
+	//
+	//   *   WALKING  *
+	//
+	else if ( state == WALKING ){
 
-if ((grid_matrix[3][0] == 5 || grid_matrix[3][1] == 5 ||
-	grid_matrix[3][2] == 5 || grid_matrix[3][3] == 5 || 
-	grid_matrix[2][0] == 5 || grid_matrix[2][1] == 5 ||
-	grid_matrix[2][2] == 5 || grid_matrix[2][3] == 5 || 
-	grid_matrix[1][0] == 5 || grid_matrix[1][1] == 5 ||
-	grid_matrix[1][2] == 5 || grid_matrix[1][3] == 5 ||
-	grid_matrix[0][0] == 5 || grid_matrix[0][1] == 5 ||
-	grid_matrix[0][2] == 5 || grid_matrix[0][3] == 5) ){
-		kick_next = 1;
-}
+	  if ( walk_period == 4 ){
+	    state = SEARCHING_BALL;
+	    walk_period = 0;
+	  }
+	  
+	  walk_period+=1;
 
-else if (kick_next == 1 && walks == 4){
-		walks = 0;
-		kick_next = 0;
-	    //command.motion_cmd=Motion::MOTION_KICK_FOREWARD;
-	    command.head_cmd=Motion::HEAD_LOOKAT;
-	    command.tail_cmd=Motion::TAIL_NO_CMD;
-	    command.head_lookat=vector3d(150,0,50);
-	    command.vx=0;
-	    command.vy=0;
-	    command.va=0.65;
-	    if (sph ==1){
-	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
-	      subject[sbjMotionControl]->NotifyObservers();
-	      sph=0;
-	    }
-	    Wait(static_cast<longword>(1000000000));
-}
 
-else if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 || grid_matrix[0][3] == 0){
+	  if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] == 0 || grid_matrix[0][3] == 0){
 	    last_turn_left = 1;
 	    OSYSDEBUG(("sinistra\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
@@ -457,8 +471,8 @@ else if(grid_matrix[0][0] == 0 || grid_matrix[0][1] == 0 || grid_matrix[0][2] ==
 	      sph=0;
 	    }
 	    Wait(static_cast<longword>(1000000000));
-}
-else if(grid_matrix[1][1] == 50 || grid_matrix[1][2] == 50 || grid_matrix[2][1] == 50 || grid_matrix[2][2] == 50){
+	  }
+	  else if(grid_matrix[1][1] == 50 || grid_matrix[1][2] == 50 || grid_matrix[2][1] == 50 || grid_matrix[2][2] == 50){
 	    OSYSDEBUG(("destra\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -473,13 +487,13 @@ else if(grid_matrix[1][1] == 50 || grid_matrix[1][2] == 50 || grid_matrix[2][1] 
 	      sph=0;
 	    }
 	    Wait(static_cast<longword>(1500000000));
-}
-else{
-		if (walks >= 3){
-			last_turn_left = 0;
-			walks = 0;
-		}
-		walks += 1;
+	  }
+	  else{
+	    if (walks >= 3){
+	      last_turn_left = 0;
+	      walks = 0;
+	    }
+	    walks += 1;
 	    OSYSDEBUG(("dritto\n"));
 	    command.motion_cmd=Motion::MOTION_WALK_TROT;
 	    command.head_cmd=Motion::HEAD_LOOKAT;
@@ -494,9 +508,11 @@ else{
 	      sph=0;
 	    }
 	    Wait(static_cast<longword>(500000000));
+	  }
+
+
 	}
-	
-	OSYSDEBUG(("pixel bianchi: %d\n",w_count));
+
 	observer[event.ObsIndex()]->AssertReady();
 }
 
@@ -588,14 +604,14 @@ GeneraMove::SetCdtVectorData()
 	//
 	// cdtBlack->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-cdtBlack->Set( 4, 129, 116, 145, 121);
-cdtBlack->Set( 5, 127, 112, 160, 119);
-cdtBlack->Set( 6, 127, 109, 159, 115);
-cdtBlack->Set( 7, 126, 108, 150, 110);
-cdtBlack->Set( 8, 122, 108, 137, 110);
-cdtBlack->Set( 9, 121, 108, 131, 110);
-cdtBlack->Set( 10, 121, 108, 127, 112);
-cdtBlack->Set( 11, 121, 110, 128, 117);
+	cdtBlack->Set( 4, 129, 116, 145, 121);
+	cdtBlack->Set( 5, 127, 112, 160, 119);
+	cdtBlack->Set( 6, 127, 109, 159, 115);
+	cdtBlack->Set( 7, 126, 108, 150, 110);
+	cdtBlack->Set( 8, 122, 108, 137, 110);
+	cdtBlack->Set( 9, 121, 108, 131, 110);
+	cdtBlack->Set( 10, 121, 108, 127, 112);
+	cdtBlack->Set( 11, 121, 110, 128, 117);
 
 
 	// setting della CDT per il bordo bianco del tracciato
@@ -605,31 +621,22 @@ cdtBlack->Set( 11, 121, 110, 128, 117);
 	//
 	// cdtWhite->Set(Y_segment, Cr_max,  Cr_min, Cb_max, Cb_min)
 	//
-/*cdtWhite->Set( 13, 112, 103, 141, 123);
-cdtWhite->Set( 14, 115, 105, 139, 123);
-cdtWhite->Set( 15, 118, 106, 136, 117);
-cdtWhite->Set( 16, 116, 106, 133, 115);
-cdtWhite->Set( 17, 114, 108, 128, 114);
-cdtWhite->Set( 18, 114, 105, 124, 114);
-cdtWhite->Set( 19, 114, 105, 121, 113);
-cdtWhite->Set( 20, 111, 105, 119, 112);*/
-
-cdtWhite->Set( 6, 104, 101, 160, 155);
-cdtWhite->Set( 7, 108, 95, 164, 148);
-cdtWhite->Set( 8, 108, 93, 164, 144);
-cdtWhite->Set( 9, 109, 91, 161, 135);
-cdtWhite->Set( 10, 109, 92, 157, 133);
-cdtWhite->Set( 11, 112, 94, 152, 130);
-cdtWhite->Set( 12, 115, 95, 148, 126);
-cdtWhite->Set( 13, 115, 98, 146, 123);
-cdtWhite->Set( 14, 117, 99, 143, 122);
-cdtWhite->Set( 15, 118, 99, 136, 117);
-cdtWhite->Set( 16, 116, 102, 133, 115);
-cdtWhite->Set( 17, 114, 105, 128, 114);
-cdtWhite->Set( 18, 114, 105, 124, 114);
-cdtWhite->Set( 19, 114, 105, 121, 113);
-cdtWhite->Set( 20, 111, 104, 119, 112);
-
+	cdtWhite->Set( 6, 104, 101, 160, 155);
+	cdtWhite->Set( 7, 108, 95, 164, 148);
+	cdtWhite->Set( 8, 108, 93, 164, 144);
+	cdtWhite->Set( 9, 109, 91, 161, 135);
+	cdtWhite->Set( 10, 109, 92, 157, 133);
+	cdtWhite->Set( 11, 112, 94, 152, 130);
+	cdtWhite->Set( 12, 115, 95, 148, 126);
+	cdtWhite->Set( 13, 115, 98, 146, 123);
+	cdtWhite->Set( 14, 117, 99, 143, 122);
+	cdtWhite->Set( 15, 118, 99, 136, 117);
+	cdtWhite->Set( 16, 116, 102, 133, 115);
+	cdtWhite->Set( 17, 114, 105, 128, 114);
+	cdtWhite->Set( 18, 114, 105, 124, 114);
+	cdtWhite->Set( 19, 114, 105, 121, 113);
+	cdtWhite->Set( 20, 111, 104, 119, 112);
+	
 
 
 	result = OPENR::SetCdtVectorData(cdtVecID);
@@ -647,162 +654,6 @@ cdtWhite->Set( 20, 111, 104, 119, 112);
 	}
 }
 
-void
-GeneraMove::RegionGrowing(OFbkImageVectorData* imageVec)
-{
-	OFbkImageInfo* info = imageVec->GetInfo(ofbkimageLAYER_C);
-	byte*          data = imageVec->GetData(ofbkimageLAYER_C);
 
-	OFbkImage cdtImage(info, data, ofbkimageBAND_CDT);
 
-	int width = cdtImage.Width();
-	int height = cdtImage.Height();
 
-	int x, y;
-
-	// prima passata - espansione
-	// se un pixel ha colore target, coloro i pixel adiacenti dello stesso colore
-	for (x=0; x < width; x++)
-	{
-		for (y=0; y < height; y++)
-		{
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL0)
-			{
-
-			}
-		}
-	}
-}
-
-bool
-GeneraMove::InsideTrack(OFbkImageVectorData* imageVec, int topLine, int linesToCheck)
-{
-	bool isInside = false;
-	bool isGray = false;
-	bool isWhite = false;
-
-	OFbkImageInfo* info = imageVec->GetInfo(ofbkimageLAYER_C);
-	byte*          data = imageVec->GetData(ofbkimageLAYER_C);
-
-	OFbkImage cdtImage(info, data, ofbkimageBAND_CDT);
-
-	int width = cdtImage.Width();
-	int height = cdtImage.Height();
-
-	int x, y;
-
-	for (y=topLine; (y < height) && (linesToCheck > 0); y++)
-	{
-		for (x=0; x < width; x++)
-		{
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)
-			{
-				isGray = true;
-			}
-			if ((cdtImage.Pixel(x, y) & ocdtCHANNEL2) && isGray)
-			{
-				isWhite = true;
-			}
-		}
-
-		if (isGray && isWhite)
-		{
-			linesToCheck--;
-		}
-
-		isGray = isWhite = false;
-	}
-
-	if (linesToCheck == 0)
-	{
-		isInside = true;
-	}
-
-	return isInside;
-}
-
-int**
-GeneraMove::Grid(OFbkImageVectorData* imageVec)
-{
-  sph = 0;
-	OFbkImageInfo* info = imageVec->GetInfo(ofbkimageLAYER_C);
-	byte*          data = imageVec->GetData(ofbkimageLAYER_C);
-
-	OFbkImage cdtImage(info, data, ofbkimageBAND_CDT);
-
-	int width = cdtImage.Width();
-	int height = cdtImage.Height();
-	int m = 0;
-	int n = 0;
-	int black_count[grids_x][grids_y];
-	 int **grid_matrix = (int**) calloc(grids_x, sizeof(int*));
-	for (int i=0; i<grids_x; i++)
-	{
-		grid_matrix[i] = (int*) calloc(grids_y, sizeof(int));
-	}
-	int thrs = 150;
-
-	int x, y;
-
-	for (x=0; x < width; x++)
-	{
-		for (y=0; y < height; y++)
-		{
-			if (cdtImage.Pixel(x, y) & ocdtCHANNEL1)	// canale del grigio/pista
-			{
-				m = (int) floor( (float) (x * grids_x) / (float) width );
-				n = (int) floor( (float) (y * grids_y) / (float) height );
-				black_count[m][n]++;
-			}
-		}
-	}
-
-	//calc_grid
-	//int step_x = width/grids_x;
-	//int step_y = height/grids_y;
-	//int x_rett = 0;
-	//int y_rett = 0;
-
-	for (x=0; x < grids_x; x++)
-	{
-		for (y=0; y < grids_y; y++)
-		{
-			if (black_count[x][y] > thrs)
-				grid_matrix[x][y] = 0;
-			else
-				grid_matrix[x][y] = 100;
-		}
-	}
-
-	//minefield
-	//int max_x = sizeof(grid_matrix[0]) / sizeof(int);
-	//int max_y = sizeof(grid_matrix) /sizeof(int);
-	OSYSDEBUG(("Arrivato fino a Minefield"));
-	for (y=0; y < grids_y; y++)
-	{
-		for (x=0; x < grids_x; x++)
-		{
-			if (grid_matrix[x][y] == 100)
-			{
-				if ((x+1 < grids_x) && (grid_matrix[x+1][y] != 100))
-					grid_matrix[x+1][y]+=1;
-                if ((y+1 < grids_y) && (grid_matrix[x][y+1] != 100))
-                    grid_matrix[x][y+1]+=1;
-                if ((x+1 < grids_x) && (y+1 < grids_y) && (grid_matrix[x+1][y+1] != 100))
-                    grid_matrix[x+1][y+1]+=1;
-                if ((y-1 >= 0) && (x-1 > 0) && (grid_matrix[x-1][y-1] != 100))
-                    grid_matrix[x-1][y-1]+=1;
-                if ((y-1 >= 0) && (grid_matrix[x][y-1] != 100))
-                    grid_matrix[x][y-1]+=1;
-                if ((x-1 >= 0) && (grid_matrix[x-1][y] != 100))
-                    grid_matrix[x-1][y]+=1;
-                if ((y-1 >= 0) && (x+1 < grids_x) && (grid_matrix[x+1][y-1] != 100))
-                    grid_matrix[x+1][y-1]+=1;
-                if ((x-1 >= 0) && (y+1 < grids_y) && (grid_matrix[x-1][y+1] != 100))
-                    grid_matrix[x-1][y+1]+=1;
-			}
-		}
-	}
-	sph = 1;
-	return grid_matrix;
-}

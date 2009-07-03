@@ -61,6 +61,7 @@ public:
 	bool InsideTrack(OFbkImageVectorData* imageVec, int topLine, int linesToCheck);
 	int** Grid(OFbkImageVectorData* imageVec);
 
+
 private:
 	/** Oggetto per la gestione della primitiva del sensore di tatto
       posteriore.*/
@@ -80,6 +81,35 @@ private:
 	int sph;
 	int count;
 
+
+
+
+	  /** Stati di Touched.*/
+
+
+enum TrackState {
+    IDLE,
+    PRE_WALKING,
+    WALKING,
+    SEARCHING_BALL,
+    TRACKING_BALL,
+    KICKING_BALL
+};
+enum Direction {
+  LEFT,
+  RIGTH,
+  FRONT,
+  NONE
+};
+
+
+
+ TrackState  state;
+ Direction found_ball;
+ Direction last_head_turn;
+ Direction strong_turn_rate;
+ int approaching;
+ int walk_period;
 };
 
 #endif
