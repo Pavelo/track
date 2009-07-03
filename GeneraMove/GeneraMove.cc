@@ -213,7 +213,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 			if (ball_count[x][y] > 20)
 			  grid_matrix[x][y] = 5;
 
-			if (white_count[x][y] > 380)
+			if (white_count[x][y] > 370)
 			  grid_matrix[x][y] = 50;
 		}
 	}
@@ -396,7 +396,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	    else if (strong_turn_rate == LEFT)
 	      command.va=0.15;
 	    else
-	      command.va=0.05;
+	      command.va=0.04;
 
 	    strong_turn_rate = NONE;
 
@@ -432,7 +432,7 @@ void GeneraMove::GetCamera(const ONotifyEvent& event) {
 	    command.head_lookat=vector3d(100,0,50);
 	    command.vx=100;
 	    command.vy=0;
-	    command.va=0.05;
+	    command.va=0.04;
 	    if (sph ==1){
 	      subject[sbjMotionControl]->SetData(&command,sizeof(Motion::MotionCommand));
 	      subject[sbjMotionControl]->NotifyObservers();
